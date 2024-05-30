@@ -436,18 +436,26 @@ class AuditSubscriber implements EventSubscriber
             return call_user_func($this->labeler, $entity);
         }
         $meta = $em->getClassMetadata(get_class($entity));
+        $label = null;
         switch (true) {
-        case $meta->hasField('title'):
-            return $meta->getReflectionProperty('title')->getValue($entity);
-        case $meta->hasField('name'):
-            return $meta->getReflectionProperty('name')->getValue($entity);
-        case $meta->hasField('label'):
-            return $meta->getReflectionProperty('label')->getValue($entity);
-        case $meta->getReflectionClass()->hasMethod('__toString'):
-            return (string)$entity;
-        default:
-            return "Unlabeled";
+            case $meta->hasField('title'):
+                $label = $meta->getReflectionProperty('title')->getValue($entity);
+                break;
+            case $meta->hasField('name'):
+                $label = $meta->getReflectionProperty('name')->getValue($entity);
+                break;
+            case $meta->hasField('label'):
+                $label = $meta->getReflectionProperty('label')->getValue($entity);
+                break;
+            case $meta->getReflectionClass()->hasMethod('__toString'):
+                $label = (string)$entity;
+                break;
+            default:
+                $label = "Unlabeled";
+                break;
         }
+
+        return (strlen($label) > 255) ? mb_substr($label, 0, 255) : $label;
     }
 
     protected function value(EntityManager $em, Type $type, $value)
